@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ResourceDictionary 
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
+
+    <!-- Typography -->
+    <!-- If Orbitron isn't installed/bundled, platforms will fall back to the next font. -->
+    <x:String x:Key="CosmicFont">Orbitron,OpenSansRegular</x:String>
+
+    <Style TargetType="Label">
+        <Setter Property="TextColor" Value="{StaticResource TextPrimary}" />
+        <Setter Property="FontFamily" Value="{StaticResource CosmicFont}" />
+        <Setter Property="FontSize" Value="14" />
+    </Style>
+
+    <Style TargetType="Entry">
+        <Setter Property="TextColor" Value="{StaticResource TextPrimary}" />
+        <Setter Property="PlaceholderColor" Value="{StaticResource TextSecondary}" />
+        <Setter Property="FontFamily" Value="{StaticResource CosmicFont}" />
+        <Setter Property="BackgroundColor" Value="Transparent" />
+    </Style>
+
+    <Style TargetType="SearchBar">
+        <Setter Property="TextColor" Value="{StaticResource TextPrimary}" />
+        <Setter Property="PlaceholderColor" Value="{StaticResource TextSecondary}" />
+        <Setter Property="CancelButtonColor" Value="{StaticResource TextSecondary}" />
+        <Setter Property="FontFamily" Value="{StaticResource CosmicFont}" />
+        <Setter Property="BackgroundColor" Value="{StaticResource CosmicSurfaceBrush}" />
+        <Setter Property="HeightRequest" Value="44" />
+    </Style>
+
+    <Style x:Key="CosmicTitle" TargetType="Label">
+        <Setter Property="FontSize" Value="28" />
+        <Setter Property="TextColor" Value="{StaticResource TextPrimary}" />
+    </Style>
+
+    <Style x:Key="CosmicSubtitle" TargetType="Label">
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="TextColor" Value="{StaticResource TextSecondary}" />
+    </Style>
+
+    <!-- Cards -->
+    <Style x:Key="CosmicCardBorder" TargetType="Border">
+        <Setter Property="Stroke" Value="{StaticResource OutlineSoft}" />
+        <Setter Property="StrokeThickness" Value="1" />
+        <Setter Property="StrokeShape">
+            <Setter.Value>
+                <RoundRectangle CornerRadius="22" />
+            </Setter.Value>
+        </Setter>
+        <Setter Property="Background" Value="{StaticResource CosmicSurface2Brush}" />
+        <Setter Property="Padding" Value="16" />
+    </Style>
+
+    <!-- Glowing / comet-trail button -->
+    <Style x:Key="GlowingButton" TargetType="Button">
+        <Setter Property="FontFamily" Value="{StaticResource CosmicFont}" />
+        <Setter Property="TextColor" Value="{StaticResource TextPrimary}" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="CornerRadius" Value="18" />
+        <Setter Property="Padding" Value="18,12" />
+        <Setter Property="Background" Value="{StaticResource CometButtonBrush}" />
+        <Setter Property="Shadow">
+            <Setter.Value>
+                <Shadow Radius="20" Opacity="0.85" Offset="0,0" Brush="{StaticResource NeonCyanBrush}" />
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="ActivityIndicator">
+        <Setter Property="Color" Value="{StaticResource NeonCyan}" />
+    </Style>
+
+    <Style TargetType="Page" ApplyToDerivedTypes="True">
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="Background" Value="{StaticResource CosmicBackgroundBrush}" />
+    </Style>
+
+    <Style TargetType="Shell" ApplyToDerivedTypes="True">
+        <Setter Property="Shell.BackgroundColor" Value="{StaticResource CosmicSurface}" />
+        <Setter Property="Shell.ForegroundColor" Value="{StaticResource TextPrimary}" />
+        <Setter Property="Shell.TitleColor" Value="{StaticResource TextPrimary}" />
+        <Setter Property="Shell.NavBarHasShadow" Value="False" />
+        <Setter Property="Shell.TabBarBackgroundColor" Value="{StaticResource CosmicSurface}" />
+        <Setter Property="Shell.TabBarForegroundColor" Value="{StaticResource NeonCyan}" />
+        <Setter Property="Shell.TabBarTitleColor" Value="{StaticResource NeonCyan}" />
+        <Setter Property="Shell.TabBarUnselectedColor" Value="{StaticResource TextSecondary}" />
+    </Style>
+
+</ResourceDictionary>

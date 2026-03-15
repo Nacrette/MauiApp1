@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="MauiApp1.Views.SolarSystemOverviewPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:controls="clr-namespace:MauiApp1.Controls"
+    xmlns:converters="clr-namespace:MauiApp1.Converters"
+    Title="Planet Explorer">
+
+    <ContentPage.Resources>
+        <converters:PlanetNameToRingConverter x:Key="PlanetNameToRingConverter" />
+    </ContentPage.Resources>
+
+    <Grid>
+        <!-- Background -->
+        <BoxView Background="{StaticResource CosmicBackgroundBrush}" />
+        <controls:StarfieldView />
+
+        <!-- Foreground -->
+        <Grid Padding="22,16" RowSpacing="14">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <VerticalStackLayout Spacing="10">
+                <Label Text="Planet Explorer" Style="{StaticResource CosmicTitle}" />
+                <SearchBar
+                    Placeholder="Search planets…"
+                    Text="{Binding SearchText}" />
+            </VerticalStackLayout>
+
+            <VerticalStackLayout Grid.Row="1" Spacing="14">
+                <Label Text="Solar System" Style="{StaticResource CosmicSubtitle}" />
+
+                <CarouselView
+                    ItemsSource="{Binding VisiblePlanets}"
+                    PeekAreaInsets="50"
+                    IsBounceEnabled="True"
+                    HeightRequest="240">
+                    <CarouselView.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Padding="8">
+                                <Border
+                                    Style="{StaticResource CosmicCardBorder}"
+                                    Stroke="{Binding AccentColor}"
+                                    Background="{StaticResource CosmicSurface2Brush}">
+                                    <Grid RowSpacing="10">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
+
+                                        <Grid ColumnSpacing="12">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+
+                                            <controls:PlanetGlyphView
+                                                AccentColor="{Binding AccentColor}"
+                                                HasRing="{Binding Name, Converter={StaticResource PlanetNameToRingConverter}}" />
+
+                                            <VerticalStackLayout Grid.Column="1" Spacing="2">
+                                                <Label Text="{Binding Name}" FontSize="20" />
+                                                <Label Text="Tap to explore" TextColor="{StaticResource TextSecondary}" FontSize="12" />
+                                            </VerticalStackLayout>
+                                        </Grid>
+
+                                        <Button
+                                            Grid.Row="1"
+                                            Text="Open Planet"
+                                            Style="{StaticResource GlowingButton}"
+                                            Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.SelectPlanetCommand}"
+                                            CommandParameter="{Binding .}" />
+                                    </Grid>
+                                </Border>
+                            </Grid>
+                        </DataTemplate>
+                    </CarouselView.ItemTemplate>
+                </CarouselView>
+            </VerticalStackLayout>
+
+            <Button
+                Grid.Row="2"
+                Text="Random Explore"
+                Style="{StaticResource GlowingButton}"
+                Command="{Binding RandomExploreCommand}"
+                HorizontalOptions="Center"
+                Margin="0,8,0,4" />
+        </Grid>
+    </Grid>
+</ContentPage>
+

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ResourceDictionary 
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
+
+    <!-- Cosmic theme palette -->
+    <Color x:Key="CosmicStart">#0A0F2E</Color>
+    <Color x:Key="CosmicEnd">#1A1F4E</Color>
+
+    <Color x:Key="CosmicSurface">#0E1436</Color>
+    <Color x:Key="CosmicSurface2">#131A42</Color>
+
+    <Color x:Key="NeonCyan">#40E0FF</Color>
+    <Color x:Key="NeonPurple">#B06CFF</Color>
+    <Color x:Key="NeonPink">#FF4FD8</Color>
+
+    <Color x:Key="TextPrimary">#F2F5FF</Color>
+    <Color x:Key="TextSecondary">#B9C1FF</Color>
+
+    <Color x:Key="OutlineSoft">#2C346E</Color>
+    <Color x:Key="Danger">#FF6B6B</Color>
+
+    <LinearGradientBrush x:Key="CosmicBackgroundBrush" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="{StaticResource CosmicStart}" Offset="0.0" />
+        <GradientStop Color="{StaticResource CosmicEnd}" Offset="1.0" />
+    </LinearGradientBrush>
+
+    <LinearGradientBrush x:Key="CometButtonBrush" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="{StaticResource NeonPurple}" Offset="0.0" />
+        <GradientStop Color="{StaticResource NeonCyan}" Offset="1.0" />
+    </LinearGradientBrush>
+
+    <SolidColorBrush x:Key="CosmicSurfaceBrush" Color="{StaticResource CosmicSurface}" />
+    <SolidColorBrush x:Key="CosmicSurface2Brush" Color="{StaticResource CosmicSurface2}" />
+    <SolidColorBrush x:Key="TextPrimaryBrush" Color="{StaticResource TextPrimary}" />
+    <SolidColorBrush x:Key="TextSecondaryBrush" Color="{StaticResource TextSecondary}" />
+    <SolidColorBrush x:Key="OutlineSoftBrush" Color="{StaticResource OutlineSoft}" />
+    <SolidColorBrush x:Key="NeonCyanBrush" Color="{StaticResource NeonCyan}" />
+    <SolidColorBrush x:Key="NeonPurpleBrush" Color="{StaticResource NeonPurple}" />
+    <SolidColorBrush x:Key="NeonPinkBrush" Color="{StaticResource NeonPink}" />
+</ResourceDictionary>

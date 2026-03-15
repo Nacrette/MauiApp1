@@ -1,0 +1,5 @@
+<Project>
+  <PropertyGroup>
+    <BaseIntermediateOutputPath>$(USERPROFILE)\AppData\Local\Temp\maui-build\</BaseIntermediateOutputPath>
+  </PropertyGroup>
+</Project>

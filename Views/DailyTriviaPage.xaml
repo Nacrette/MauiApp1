@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="MauiApp1.Views.DailyTriviaPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:controls="clr-namespace:MauiApp1.Controls"
+    Title="Daily Trivia">
+
+    <Grid>
+        <BoxView Background="{StaticResource CosmicBackgroundBrush}" />
+        <controls:StarfieldView />
+
+        <Grid Padding="22,16" RowSpacing="12">
+            <Label Text="Daily Trivia" Style="{StaticResource CosmicTitle}" />
+
+            <Border Style="{StaticResource CosmicCardBorder}" Margin="0,52,0,0">
+                <Label Text="{Binding Trivia}" FontSize="16" />
+            </Border>
+        </Grid>
+    </Grid>
+</ContentPage>
+

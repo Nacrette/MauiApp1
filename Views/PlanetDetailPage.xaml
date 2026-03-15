@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="MauiApp1.Views.PlanetDetailPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:controls="clr-namespace:MauiApp1.Controls"
+    xmlns:converters="clr-namespace:MauiApp1.Converters"
+    Title="Planet Detail"
+    Shell.NavBarIsVisible="False">
+
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <converters:FavoriteButtonTextConverter x:Key="FavoriteButtonTextConverter" />
+        </ResourceDictionary>
+    </ContentPage.Resources>
+
+    <Grid>
+        <BoxView Background="{StaticResource CosmicBackgroundBrush}" />
+        <controls:StarfieldView />
+
+        <Grid Padding="18,16" RowSpacing="12">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <Grid ColumnSpacing="12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <Button
+                    Text="←"
+                    WidthRequest="44"
+                    HeightRequest="44"
+                    CornerRadius="18"
+                    BackgroundColor="{StaticResource CosmicSurface}"
+                    TextColor="{StaticResource TextPrimary}"
+                    Clicked="OnBackClicked" />
+
+                <VerticalStackLayout Grid.Column="1" Spacing="2">
+                    <Label Text="{Binding Planet.Name}" FontSize="22" />
+                    <Label Text="Orbital dossier" TextColor="{StaticResource TextSecondary}" FontSize="12" />
+                </VerticalStackLayout>
+            </Grid>
+
+            <Grid Grid.Row="1" HorizontalOptions="Center">
+                <controls:RotatingPlanetView AccentColor="{Binding Planet.AccentColor}" />
+            </Grid>
+
+            <CollectionView Grid.Row="2" ItemsSource="{Binding FactCards}">
+                <CollectionView.ItemsLayout>
+                    <LinearItemsLayout Orientation="Vertical" ItemSpacing="10" />
+                </CollectionView.ItemsLayout>
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Border Style="{StaticResource CosmicCardBorder}">
+                            <Grid ColumnSpacing="12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Label Text="{Binding Key}" TextColor="{StaticResource NeonCyan}" FontSize="12" />
+                                <Label Grid.Column="1" Text="{Binding Value}" />
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+
+            <Grid Grid.Row="3" ColumnSpacing="12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <Button
+                    Text="Enter Flight Mode"
+                    Style="{StaticResource GlowingButton}"
+                    Command="{Binding EnterFlightModeCommand}" />
+
+                <Button
+                    Grid.Column="1"
+                    Text="{Binding IsFavorite, Converter={StaticResource FavoriteButtonTextConverter}}"
+                    Style="{StaticResource GlowingButton}"
+                    Command="{Binding ToggleFavoriteCommand}" />
+            </Grid>
+        </Grid>
+    </Grid>
+</ContentPage>
+

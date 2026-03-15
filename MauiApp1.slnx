@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="MauiApp1.csproj">
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+  </Project>
+</Solution>
