@@ -4,7 +4,6 @@ namespace MauiApp1.Services;
 
 public interface IApodService
 {
-    Task<ApodModel> GetRandomApodAsync(CancellationToken cancellationToken);
-    DateOnly GetRandomDate();
+    Task<ApodModel> GetTodaysApodAsync(CancellationToken cancellationToken = default);
+    Task<ApodModel> GetApodByDateAsync(DateOnly date, CancellationToken cancellationToken = default);
 }
-

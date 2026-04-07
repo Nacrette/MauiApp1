@@ -21,5 +21,8 @@ public sealed class ApodModel
 
     [JsonPropertyName("media_type")]
     public string? MediaType { get; set; }
+
+    [JsonPropertyName("copyright")]
+    public string? Copyright { get; set; }
 }
 

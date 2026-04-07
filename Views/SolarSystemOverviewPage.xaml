@@ -5,91 +5,134 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:controls="clr-namespace:MauiApp1.Controls"
     xmlns:converters="clr-namespace:MauiApp1.Converters"
-    Title="Planet Explorer">
+    Title="Milky Way Explorer">
 
     <ContentPage.Resources>
         <converters:PlanetNameToRingConverter x:Key="PlanetNameToRingConverter" />
     </ContentPage.Resources>
 
     <Grid>
-        <!-- Background -->
         <BoxView Background="{StaticResource CosmicBackgroundBrush}" />
         <controls:StarfieldView />
 
-        <!-- Foreground -->
-        <Grid Padding="22,16" RowSpacing="14">
+        <Grid RowSpacing="0">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
-                <RowDefinition Height="*" />
                 <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
             </Grid.RowDefinitions>
 
-            <VerticalStackLayout Spacing="10">
-                <Label Text="Planet Explorer" Style="{StaticResource CosmicTitle}" />
+            <VerticalStackLayout Grid.Row="0" Padding="22,16,22,8" Spacing="12">
+                <Label Text="Milky Way Explorer" Style="{StaticResource CosmicTitle}" />
                 <SearchBar
-                    Placeholder="Search planets…"
-                    Text="{Binding SearchText}" />
+                    Placeholder="Search planets, exoplanets, stars…"
+                    Text="{Binding SearchText}"
+                    CancelButtonColor="{StaticResource TextSecondary}" />
+                <Button Text="Today's NASA APOD" Style="{StaticResource GlowingButton}" 
+                        Command="{Binding OpenApodCommand}"
+                        HorizontalOptions="Start" />
             </VerticalStackLayout>
 
-            <VerticalStackLayout Grid.Row="1" Spacing="14">
-                <Label Text="Solar System" Style="{StaticResource CosmicSubtitle}" />
+            <ActivityIndicator Grid.Row="2" IsRunning="True" 
+                             HorizontalOptions="Center" VerticalOptions="Center"
+                             IsVisible="{Binding IsLoadingSolarSystem}" />
 
-                <CarouselView
-                    ItemsSource="{Binding VisiblePlanets}"
-                    PeekAreaInsets="50"
-                    IsBounceEnabled="True"
-                    HeightRequest="240">
-                    <CarouselView.ItemTemplate>
-                        <DataTemplate>
-                            <Grid Padding="8">
-                                <Border
-                                    Style="{StaticResource CosmicCardBorder}"
-                                    Stroke="{Binding AccentColor}"
-                                    Background="{StaticResource CosmicSurface2Brush}">
-                                    <Grid RowSpacing="10">
-                                        <Grid.RowDefinitions>
-                                            <RowDefinition Height="Auto" />
-                                            <RowDefinition Height="Auto" />
-                                        </Grid.RowDefinitions>
+            <ScrollView Grid.Row="2" IsVisible="{Binding IsSearching, Converter={StaticResource InverseBoolConverter}}">
+                <VerticalStackLayout Padding="22,8,22,22" Spacing="20">
+                    
+                    <VerticalStackLayout Spacing="8">
+                        <Label Text="Solar System" Style="{StaticResource CosmicSubtitle}" FontSize="16" />
+                        <CarouselView ItemsSource="{Binding SolarSystemPlanets}" PeekAreaInsets="50" HeightRequest="220">
+                            <CarouselView.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Padding="8">
+                                        <Border Style="{StaticResource CosmicCardBorder}" Stroke="{Binding AccentColor}">
+                                            <Grid RowSpacing="8">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="80" />
+                                                    <ColumnDefinition Width="*" />
+                                                </Grid.ColumnDefinitions>
+                                                <controls:PlanetGlyphView AccentColor="{Binding AccentColor}" HasRing="{Binding HasRing}" />
+                                                <VerticalStackLayout Grid.Column="1" Spacing="4" VerticalOptions="Center">
+                                                    <Label Text="{Binding Name}" FontSize="18" FontAttributes="Bold" />
+                                                    <Label Text="{Binding Description}" FontSize="11" TextColor="{StaticResource TextSecondary}" LineBreakMode="TailTruncation" />
+                                                    <Button Text="Explore" Style="{StaticResource GlowingButton}" Padding="12,6"
+                                                            Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.SelectCelestialBodyCommand}"
+                                                            CommandParameter="{Binding .}" />
+                                                </VerticalStackLayout>
+                                            </Grid>
+                                        </Border>
+                                    </Grid>
+                                </DataTemplate>
+                            </CarouselView.ItemTemplate>
+                        </CarouselView>
+                    </VerticalStackLayout>
 
+                    <VerticalStackLayout Spacing="8">
+                        <Label Text="Exoplanets" Style="{StaticResource CosmicSubtitle}" FontSize="16" />
+                        <ActivityIndicator IsRunning="{Binding IsLoadingExoplanets}" IsVisible="{Binding IsLoadingExoplanets}" HorizontalOptions="Center" />
+                        <CollectionView ItemsSource="{Binding Exoplanets}" HeightRequest="400" IsVisible="{Binding IsLoadingExoplanets, Converter={StaticResource InverseBoolConverter}}">
+                            <CollectionView.ItemsLayout>
+                                <LinearItemsLayout Orientation="Vertical" ItemSpacing="10" />
+                            </CollectionView.ItemsLayout>
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Style="{StaticResource CosmicCardBorder}" Stroke="{Binding AccentColor}">
                                         <Grid ColumnSpacing="12">
                                             <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="60" />
                                                 <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
                                             </Grid.ColumnDefinitions>
-
-                                            <controls:PlanetGlyphView
-                                                AccentColor="{Binding AccentColor}"
-                                                HasRing="{Binding Name, Converter={StaticResource PlanetNameToRingConverter}}" />
-
-                                            <VerticalStackLayout Grid.Column="1" Spacing="2">
-                                                <Label Text="{Binding Name}" FontSize="20" />
-                                                <Label Text="Tap to explore" TextColor="{StaticResource TextSecondary}" FontSize="12" />
+                                            <Label Text="{Binding Emoji}" FontSize="32" VerticalOptions="Center" HorizontalOptions="Center" />
+                                            <VerticalStackLayout Grid.Column="1" Spacing="2" VerticalOptions="Center">
+                                                <Label Text="{Binding Name}" FontSize="16" FontAttributes="Bold" />
+                                                <Label Text="{Binding HostStar}" FontSize="12" TextColor="{StaticResource NeonCyan}" />
+                                                <Label Text="{Binding Description}" FontSize="11" TextColor="{StaticResource TextSecondary}" LineBreakMode="TailTruncation" />
                                             </VerticalStackLayout>
+                                            <Button Grid.Column="2" Text="Explore" Style="{StaticResource GlowingButton}" Padding="10,6"
+                                                    Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.SelectCelestialBodyCommand}"
+                                                    CommandParameter="{Binding .}" />
                                         </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
+                    </VerticalStackLayout>
+                </VerticalStackLayout>
+            </ScrollView>
 
-                                        <Button
-                                            Grid.Row="1"
-                                            Text="Open Planet"
-                                            Style="{StaticResource GlowingButton}"
-                                            Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.SelectPlanetCommand}"
-                                            CommandParameter="{Binding .}" />
+            <ScrollView Grid.Row="2" IsVisible="{Binding IsSearching}">
+                <VerticalStackLayout Padding="22,8,22,22" Spacing="12">
+                    <Label Text="Search Results" Style="{StaticResource CosmicSubtitle}" FontSize="16" />
+                    <CollectionView ItemsSource="{Binding SearchResults}">
+                        <CollectionView.ItemsLayout>
+                            <LinearItemsLayout Orientation="Vertical" ItemSpacing="10" />
+                        </CollectionView.ItemsLayout>
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Border Style="{StaticResource CosmicCardBorder}" Stroke="{Binding AccentColor}">
+                                    <Grid ColumnSpacing="12">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="60" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <Label Text="{Binding Emoji}" FontSize="32" VerticalOptions="Center" HorizontalOptions="Center" />
+                                        <VerticalStackLayout Grid.Column="1" Spacing="2" VerticalOptions="Center">
+                                            <Label Text="{Binding Name}" FontSize="16" FontAttributes="Bold" />
+                                            <Label Text="{Binding Subtitle}" FontSize="11" TextColor="{StaticResource TextSecondary}" LineBreakMode="TailTruncation" />
+                                        </VerticalStackLayout>
+                                        <Button Grid.Column="2" Text="Explore" Style="{StaticResource GlowingButton}" Padding="10,6"
+                                                Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.SelectCelestialBodyCommand}"
+                                                CommandParameter="{Binding .}" />
                                     </Grid>
                                 </Border>
-                            </Grid>
-                        </DataTemplate>
-                    </CarouselView.ItemTemplate>
-                </CarouselView>
-            </VerticalStackLayout>
-
-            <Button
-                Grid.Row="2"
-                Text="Random Explore"
-                Style="{StaticResource GlowingButton}"
-                Command="{Binding RandomExploreCommand}"
-                HorizontalOptions="Center"
-                Margin="0,8,0,4" />
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </VerticalStackLayout>
+            </ScrollView>
         </Grid>
     </Grid>
 </ContentPage>
-

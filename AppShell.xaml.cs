@@ -1,17 +1,15 @@
 using MauiApp1.Views;
 
-namespace MauiApp1
-{
-    public partial class AppShell : Shell
-    {
-        public AppShell()
-        {
-            InitializeComponent();
+namespace MauiApp1;
 
-            // Non-tab routes
-            Routing.RegisterRoute("planet-detail", typeof(PlanetDetailPage));
-            Routing.RegisterRoute("random-news", typeof(RandomCosmicNewsPage));
-            Routing.RegisterRoute("flight-mode", typeof(FlightModePage));
-        }
+public partial class AppShell : Shell
+{
+    public AppShell()
+    {
+        InitializeComponent();
+
+        Routing.RegisterRoute("planet-detail", typeof(PlanetDetailPage));
+        Routing.RegisterRoute("flight-mode", typeof(FlightModePage));
+        Routing.RegisterRoute("login", typeof(LoginPage));
     }
 }

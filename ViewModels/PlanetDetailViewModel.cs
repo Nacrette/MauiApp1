@@ -1,7 +1,6 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using MauiApp1.Helpers;
 using MauiApp1.Models;
 using MauiApp1.Services;
 
@@ -9,18 +8,26 @@ namespace MauiApp1.ViewModels;
 
 public sealed partial class PlanetDetailViewModel : ViewModelBase, IQueryAttributable
 {
-    private readonly IPlanetService _planetService;
-    private readonly IFavoritesService _favorites;
+    private readonly ICelestialBodyService _celestialBodyService;
+    private readonly IFavoritesService _favoritesService;
+    private readonly IAuthService _authService;
 
-    [ObservableProperty] private Planet? planet;
+    [ObservableProperty]
+    private CelestialBody? planet;
+
     public ObservableCollection<KeyValuePair<string, string>> FactCards { get; } = [];
 
-    [ObservableProperty] private bool isFavorite;
+    [ObservableProperty]
+    private bool isFavorite;
 
-    public PlanetDetailViewModel(IPlanetService planetService, IFavoritesService favorites)
+    [ObservableProperty]
+    private bool isLoggedIn;
+
+    public PlanetDetailViewModel(ICelestialBodyService celestialBodyService, IFavoritesService favoritesService, IAuthService authService)
     {
-        _planetService = planetService;
-        _favorites = favorites;
+        _celestialBodyService = celestialBodyService;
+        _favoritesService = favoritesService;
+        _authService = authService;
     }
 
     public void ApplyQueryAttributes(IDictionary<string, object> query)
@@ -31,19 +38,41 @@ public sealed partial class PlanetDetailViewModel : ViewModelBase, IQueryAttribu
         LoadByName(name);
     }
 
-    private void LoadByName(string name)
+    private async void LoadByName(string name)
     {
-        var p = _planetService.GetByName(name);
+        var p = await _celestialBodyService.GetCelestialBodyByNameAsync(name);
         Planet = p;
+        IsLoggedIn = _authService.IsLoggedIn;
 
         FactCards.Clear();
-        if (p?.Facts is not null)
+        if (p != null)
         {
-            foreach (var kv in p.Facts)
-                FactCards.Add(kv);
+            FactCards.Add(new("Type", p.Type == CelestialBodyType.SolarSystemPlanet ? "Solar System Planet" : "Exoplanet"));
+            if (p.DiscoveryYear.HasValue)
+                FactCards.Add(new("Discovery Year", p.DiscoveryYear.ToString()!));
+            if (!string.IsNullOrEmpty(p.HostStar))
+                FactCards.Add(new("Host Star", p.HostStar));
+            FactCards.Add(new("Distance", p.DisplayDistance));
+            FactCards.Add(new("Mass", p.DisplayMass));
+            FactCards.Add(new("Radius", p.DisplayRadius));
+            if (!string.IsNullOrEmpty(p.OrbitalPeriod) && p.OrbitalPeriod != "Unknown")
+                FactCards.Add(new("Orbital Period", $"{p.OrbitalPeriod} days"));
+            FactCards.Add(new("Description", p.Description));
         }
 
-        IsFavorite = p is not null && _favorites.IsFavorite(p.Name);
+        UpdateFavoriteStatus();
+    }
+
+    private void UpdateFavoriteStatus()
+    {
+        if (Planet == null || !_authService.IsLoggedIn)
+        {
+            IsFavorite = false;
+            return;
+        }
+
+        var username = _authService.CurrentUser?.Username ?? string.Empty;
+        IsFavorite = _favoritesService.IsPlanetFavorite(username, Planet.Name);
     }
 
     [RelayCommand]
@@ -62,15 +91,16 @@ public sealed partial class PlanetDetailViewModel : ViewModelBase, IQueryAttribu
     [RelayCommand]
     private void ToggleFavorite()
     {
-        if (Planet is null)
+        if (Planet == null || !_authService.IsLoggedIn)
             return;
 
-        if (_favorites.IsFavorite(Planet.Name))
-            _favorites.Remove(Planet.Name);
-        else
-            _favorites.Add(Planet);
+        var username = _authService.CurrentUser?.Username ?? string.Empty;
 
-        IsFavorite = _favorites.IsFavorite(Planet.Name);
+        if (IsFavorite)
+            _favoritesService.RemoveFavoritePlanet(username, Planet.Name);
+        else
+            _favoritesService.AddFavoritePlanet(username, Planet);
+
+        IsFavorite = !IsFavorite;
     }
 }
-

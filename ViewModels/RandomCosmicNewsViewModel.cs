@@ -9,12 +9,20 @@ public sealed partial class RandomCosmicNewsViewModel : ViewModelBase
 {
     private readonly IApodService _apodService;
 
-    [ObservableProperty] private string title = "Loading…";
-    [ObservableProperty] private string dateText = "";
-    [ObservableProperty] private string explanation = "";
-    [ObservableProperty] private ImageSource? heroImage;
+    [ObservableProperty]
+    private string title = "Loading\u2026";
 
-    [ObservableProperty] private bool isUsingFallback;
+    [ObservableProperty]
+    private string dateText = "";
+
+    [ObservableProperty]
+    private string explanation = "";
+
+    [ObservableProperty]
+    private ImageSource? heroImage;
+
+    [ObservableProperty]
+    private bool isUsingFallback;
 
     public RandomCosmicNewsViewModel(IApodService apodService)
     {
@@ -39,17 +47,22 @@ public sealed partial class RandomCosmicNewsViewModel : ViewModelBase
 
         try
         {
-            var apod = await _apodService.GetRandomApodAsync(CancellationToken.None);
+            var minDate = new DateOnly(1995, 6, 16);
+            var maxDate = DateOnly.FromDateTime(DateTime.UtcNow.Date);
+            var rangeDays = maxDate.DayNumber - minDate.DayNumber;
+            var randomOffset = Random.Shared.Next(0, Math.Max(1, rangeDays + 1));
+            var randomDate = DateOnly.FromDayNumber(minDate.DayNumber + randomOffset);
+
+            var apod = await _apodService.GetApodByDateAsync(randomDate);
             Apply(apod);
         }
         catch (Exception ex)
         {
-            // Offline / NASA error: fall back to a bundled image so the page still looks great.
             Title = "Cosmic Signal Lost";
             DateText = DateTime.UtcNow.ToString("yyyy-MM-dd");
             Explanation =
                 "No internet connection (or NASA APOD is temporarily unavailable). " +
-                "You’re seeing a local demo image — tap Explore Again when you’re back online.";
+                "You're seeing a local demo image \u2014 tap Explore Again when you're back online.";
 
             HeroImage = ImageSource.FromFile("dotnet_bot.png");
             IsUsingFallback = true;
@@ -64,15 +77,23 @@ public sealed partial class RandomCosmicNewsViewModel : ViewModelBase
     private void Apply(ApodModel apod)
     {
         Title = apod.Title ?? "NASA APOD";
-        DateText = apod.Date ?? _apodService.GetRandomDate().ToString("yyyy-MM-dd");
-        Explanation = apod.Explanation ?? "";
+        DateText = apod.Date ?? string.Empty;
+        Explanation = apod.Explanation ?? string.Empty;
 
         if (!string.Equals(apod.MediaType, "image", StringComparison.OrdinalIgnoreCase))
-            throw new InvalidOperationException("APOD was not an image for this date.");
+        {
+            Title = "Video Content";
+            Explanation = "This APOD is a video. Please visit NASA's website to view it.";
+            HeroImage = ImageSource.FromFile("dotnet_bot.png");
+            return;
+        }
 
         var url = apod.HdUrl ?? apod.Url;
         if (string.IsNullOrWhiteSpace(url))
-            throw new InvalidOperationException("APOD image url missing.");
+        {
+            HeroImage = ImageSource.FromFile("dotnet_bot.png");
+            return;
+        }
 
         HeroImage = new UriImageSource
         {
@@ -82,4 +103,3 @@ public sealed partial class RandomCosmicNewsViewModel : ViewModelBase
         };
     }
 }
-

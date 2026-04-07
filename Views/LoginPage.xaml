@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="MauiApp1.Views.LoginPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:controls="clr-namespace:MauiApp1.Controls"
+    Title="Login"
+    Shell.NavBarIsVisible="False">
+    
+    <Grid>
+        <BoxView Background="{StaticResource CosmicBackgroundBrush}" />
+        <controls:StarfieldView />
+        
+        <ScrollView VerticalOptions="Center" HorizontalOptions="Center">
+            <VerticalStackLayout Padding="32" Spacing="20" WidthRequest="320">
+                
+                <Label Text="Milky Way Explorer" FontSize="28" FontAttributes="Bold" 
+                       TextColor="{StaticResource NeonCyan}" HorizontalOptions="Center" />
+                
+                <Label Text="Sign in to continue your journey" FontSize="14" 
+                       TextColor="{StaticResource TextSecondary}" 
+                       HorizontalOptions="Center" Margin="0,0,0,10"
+                       x:Name="AuthLabel" />
+                
+                <Entry Placeholder="Username" Text="{Binding Username}" 
+                       Style="{StaticResource CosmicEntry}" />
+                
+                <Entry Placeholder="Password" IsPassword="True" Text="{Binding Password}" 
+                       Style="{StaticResource CosmicEntry}" />
+                
+                <Entry Placeholder="Display Name (optional)" Text="{Binding DisplayName}" 
+                       Style="{StaticResource CosmicEntry}" 
+                       x:Name="DisplayNameEntry" />
+                
+                <Label Text="{Binding ErrorMessage}" TextColor="{StaticResource Danger}" 
+                       FontSize="12" HorizontalOptions="Center" />
+                
+                <Button Text="Login" Style="{StaticResource GlowingButton}" 
+                        Command="{Binding LoginCommand}"
+                        x:Name="LoginButton"
+                        IsEnabled="{Binding IsLoading, Converter={StaticResource InverseBoolConverter}}" />
+                
+                <Button Text="Create Account" Style="{StaticResource GlowingButton}" 
+                        Command="{Binding RegisterCommand}"
+                        x:Name="RegisterButton"
+                        IsEnabled="{Binding IsLoading, Converter={StaticResource InverseBoolConverter}}" />
+                
+                <ActivityIndicator IsRunning="{Binding IsLoading}" 
+                                   HorizontalOptions="Center" Margin="0,10,0,0" />
+                
+                <Button Text="New here? Create an account" 
+                        BackgroundColor="Transparent" TextColor="{StaticResource TextSecondary}" 
+                        Command="{Binding ToggleModeCommand}" Margin="0,10,0,0"
+                        x:Name="ToggleButton" />
+                
+            </VerticalStackLayout>
+        </ScrollView>
+    </Grid>
+</ContentPage>

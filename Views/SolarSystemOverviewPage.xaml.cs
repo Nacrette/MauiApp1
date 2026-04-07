@@ -5,10 +5,18 @@ namespace MauiApp1.Views;
 
 public partial class SolarSystemOverviewPage : ContentPage
 {
+    private readonly SolarSystemOverviewViewModel _viewModel;
+
     public SolarSystemOverviewPage()
     {
         InitializeComponent();
-        BindingContext = AppServices.GetRequiredService<SolarSystemOverviewViewModel>();
+        _viewModel = AppServices.GetRequiredService<SolarSystemOverviewViewModel>();
+        BindingContext = _viewModel;
+    }
+
+    protected override async void OnAppearing()
+    {
+        base.OnAppearing();
+        await _viewModel.LoadDataCommand.ExecuteAsync(null);
     }
 }
-

@@ -10,23 +10,70 @@
         <BoxView Background="{StaticResource CosmicBackgroundBrush}" />
         <controls:StarfieldView />
 
-        <Grid Padding="22,16" RowSpacing="12">
-            <Label Text="Settings" Style="{StaticResource CosmicTitle}" />
-
-            <Border Style="{StaticResource CosmicCardBorder}">
-                <Grid ColumnSpacing="12">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-                    <VerticalStackLayout Spacing="2">
-                        <Label Text="Reduce motion" FontSize="16" />
-                        <Label Text="Disables some animations (optional)." TextColor="{StaticResource TextSecondary}" FontSize="12" />
+        <ScrollView Padding="22,16">
+            <VerticalStackLayout Spacing="20">
+                
+                <Label Text="Settings" Style="{StaticResource CosmicTitle}" />
+                
+                <Border Style="{StaticResource CosmicCardBorder}" IsVisible="{Binding IsLoggedIn}">
+                    <Grid ColumnSpacing="16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        
+                        <Frame BackgroundColor="{StaticResource CosmicSurface2}" CornerRadius="40" WidthRequest="80" HeightRequest="80" Padding="0">
+                            <Label Text="{Binding CurrentUser.AvatarEmoji}" FontSize="40" HorizontalOptions="Center" VerticalOptions="Center" />
+                        </Frame>
+                        
+                        <VerticalStackLayout Grid.Column="1" Spacing="4" VerticalOptions="Center">
+                            <Label Text="{Binding CurrentUser.DisplayName}" FontSize="20" FontAttributes="Bold" />
+                            <Label Text="{Binding CurrentUser.Username}" FontSize="12" TextColor="{StaticResource TextSecondary}" />
+                        </VerticalStackLayout>
+                        
+                        <Button Grid.Column="2" Text="Logout" BackgroundColor="{StaticResource CosmicSurface}" 
+                                TextColor="{StaticResource Danger}" CornerRadius="18" Padding="14,8"
+                                Command="{Binding LogoutCommand}" VerticalOptions="Center" />
+                    </Grid>
+                </Border>
+                
+                <Border Style="{StaticResource CosmicCardBorder}" IsVisible="{Binding IsLoggedIn, Converter={StaticResource InverseBoolConverter}}">
+                    <VerticalStackLayout HorizontalOptions="Center" Spacing="12">
+                        <Label Text="Not logged in" FontSize="18" TextColor="{StaticResource TextSecondary}" HorizontalOptions="Center" />
+                        <Button Text="Go to Login" Style="{StaticResource GlowingButton}" 
+                                Clicked="OnGoToLoginClicked" />
                     </VerticalStackLayout>
-                    <Switch Grid.Column="1" IsToggled="{Binding ReduceMotion}" />
-                </Grid>
-            </Border>
-        </Grid>
+                </Border>
+
+                <Label Text="Display" Style="{StaticResource CosmicSubtitle}" FontSize="16" Margin="0,10,0,0" />
+                
+                <Border Style="{StaticResource CosmicCardBorder}">
+                    <Grid ColumnSpacing="12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <VerticalStackLayout Spacing="2">
+                            <Label Text="Reduce motion" FontSize="16" />
+                            <Label Text="Disables some animations (optional)." TextColor="{StaticResource TextSecondary}" FontSize="12" />
+                        </VerticalStackLayout>
+                        <Switch Grid.Column="1" IsToggled="{Binding ReduceMotion}" />
+                    </Grid>
+                </Border>
+
+                <Label Text="About" Style="{StaticResource CosmicSubtitle}" FontSize="16" Margin="0,10,0,0" />
+                
+                <Border Style="{StaticResource CosmicCardBorder}">
+                    <VerticalStackLayout Spacing="8">
+                        <Label Text="Milky Way Explorer" FontSize="16" FontAttributes="Bold" />
+                        <Label Text="Version 1.0.0" FontSize="12" TextColor="{StaticResource TextSecondary}" />
+                        <Label Text="Explore the Solar System and beyond with NASA's real data. Built with .NET MAUI." 
+                               FontSize="12" TextColor="{StaticResource TextSecondary}" LineBreakMode="WordWrap" />
+                    </VerticalStackLayout>
+                </Border>
+                
+            </VerticalStackLayout>
+        </ScrollView>
     </Grid>
 </ContentPage>
-

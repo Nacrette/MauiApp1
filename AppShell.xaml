@@ -4,7 +4,7 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:views="clr-namespace:MauiApp1.Views"
-    Title="Planet Explorer Simulator">
+    Title="Milky Way Explorer">
 
     <TabBar>
         <ShellContent
@@ -13,9 +13,9 @@
             ContentTemplate="{DataTemplate views:SolarSystemOverviewPage}" />
 
         <ShellContent
-            Title="Daily Trivia"
-            Route="trivia"
-            ContentTemplate="{DataTemplate views:DailyTriviaPage}" />
+            Title="APOD"
+            Route="apod"
+            ContentTemplate="{DataTemplate views:ApodPage}" />
 
         <ShellContent
             Title="Favorites"

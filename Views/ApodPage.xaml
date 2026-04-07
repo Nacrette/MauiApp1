@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="MauiApp1.Views.ApodPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:controls="clr-namespace:MauiApp1.Controls"
+    Title="Today's NASA APOD">
+    
+    <Grid>
+        <BoxView Background="{StaticResource CosmicBackgroundBrush}" />
+        <controls:StarfieldView />
+        
+        <Grid RowSpacing="0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            
+            <Label Grid.Row="0" Text="NASA Astronomy Picture of the Day" 
+                   Style="{StaticResource CosmicTitle}" Padding="22,16,22,8" />
+            
+            <ScrollView Grid.Row="1" Padding="22,0,22,22">
+                <VerticalStackLayout Spacing="16">
+                    
+                    <ActivityIndicator IsRunning="{Binding IsLoading}" 
+                                       HorizontalOptions="Center" HeightRequest="60"
+                                       IsVisible="{Binding IsLoading}" />
+                    
+                    <Label Text="{Binding ErrorMessage}" TextColor="{StaticResource Danger}"
+                           HorizontalOptions="Center" IsVisible="{Binding ErrorMessage, Converter={StaticResource StringNotNullOrEmptyConverter}}" />
+                    
+                    <StackLayout IsVisible="{Binding IsLoading, Converter={StaticResource InverseBoolConverter}}" Spacing="16">
+                        
+                        <Frame BackgroundColor="{StaticResource CosmicSurface}" 
+                               CornerRadius="16" Padding="0" HasShadow="False">
+                            <Grid>
+                                <Image Source="{Binding ImageUrl}" 
+                                       Aspect="AspectFit" 
+                                       HeightRequest="280"
+                                       IsLoading="{Binding IsImageLoading}" />
+                                <ActivityIndicator IsRunning="{Binding IsImageLoading}" 
+                                                   HorizontalOptions="Center" VerticalOptions="Center"
+                                                   IsVisible="{Binding IsImageLoading}" />
+                            </Grid>
+                        </Frame>
+                        
+                        <Label Text="{Binding Date}" FontSize="12" 
+                               TextColor="{StaticResource NeonCyan}" />
+                        
+                        <Label Text="{Binding Title}" FontSize="22" FontAttributes="Bold" 
+                               TextColor="{StaticResource TextPrimary}" />
+                        
+                        <Label Text="{Binding Copyright}" FontSize="11" 
+                               TextColor="{StaticResource TextSecondary}" />
+                        
+                        <Label Text="{Binding Explanation}" FontSize="14" 
+                               TextColor="{StaticResource TextPrimary}" 
+                               LineHeight="1.5" />
+                        
+                        <Button Text="{Binding IsFavorite, Converter={StaticResource FavoriteButtonTextConverter}}"
+                                Style="{StaticResource GlowingButton}"
+                                Command="{Binding ToggleFavoriteCommand}"
+                                HorizontalOptions="Start"
+                                Margin="0,8,0,0" />
+                        
+                    </StackLayout>
+                </VerticalStackLayout>
+            </ScrollView>
+        </Grid>
+    </Grid>
+</ContentPage>
