@@ -20,6 +20,54 @@
         <Setter Property="BackgroundColor" Value="Transparent" />
     </Style>
 
+    <Style x:Key="CosmicEntry" TargetType="Entry">
+        <Setter Property="FontFamily" Value="OpenSansRegular" />
+        <Setter Property="FontSize" Value="15" />
+        <Setter Property="TextColor" Value="{StaticResource TextPrimary}" />
+        <Setter Property="PlaceholderColor" Value="#9AA8F7" />
+        <Setter Property="BackgroundColor" Value="#330E1436" />
+        <Setter Property="HeightRequest" Value="52" />
+        <Setter Property="Margin" Value="0,2" />
+        <Setter Property="ClearButtonVisibility" Value="WhileEditing" />
+        <Setter Property="Shadow">
+            <Setter.Value>
+                <Shadow Brush="{StaticResource NeonCyanBrush}" Radius="12" Opacity="0.30" Offset="0,0" />
+            </Setter.Value>
+        </Setter>
+        <Setter Property="VisualStateManager.VisualStateGroups">
+            <VisualStateGroupList>
+                <VisualStateGroup x:Name="CommonStates">
+                    <VisualState x:Name="Normal">
+                        <VisualState.Setters>
+                            <Setter Property="BackgroundColor" Value="#330E1436" />
+                            <Setter Property="Shadow">
+                                <Setter.Value>
+                                    <Shadow Brush="{StaticResource NeonCyanBrush}" Radius="12" Opacity="0.30" Offset="0,0" />
+                                </Setter.Value>
+                            </Setter>
+                        </VisualState.Setters>
+                    </VisualState>
+                    <VisualState x:Name="Focused">
+                        <VisualState.Setters>
+                            <Setter Property="BackgroundColor" Value="#4D131A42" />
+                            <Setter Property="Shadow">
+                                <Setter.Value>
+                                    <Shadow Brush="{StaticResource NeonCyanBrush}" Radius="18" Opacity="0.75" Offset="0,0" />
+                                </Setter.Value>
+                            </Setter>
+                        </VisualState.Setters>
+                    </VisualState>
+                    <VisualState x:Name="Disabled">
+                        <VisualState.Setters>
+                            <Setter Property="TextColor" Value="{StaticResource TextSecondary}" />
+                            <Setter Property="BackgroundColor" Value="#220E1436" />
+                        </VisualState.Setters>
+                    </VisualState>
+                </VisualStateGroup>
+            </VisualStateGroupList>
+        </Setter>
+    </Style>
+
     <Style TargetType="SearchBar">
         <Setter Property="TextColor" Value="{StaticResource TextPrimary}" />
         <Setter Property="PlaceholderColor" Value="{StaticResource TextSecondary}" />
