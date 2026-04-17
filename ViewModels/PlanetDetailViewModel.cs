@@ -1,6 +1,8 @@
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.Maui.Devices;
 using MauiApp1.Models;
 using MauiApp1.Services;
 
@@ -22,6 +24,8 @@ public sealed partial class PlanetDetailViewModel : ViewModelBase, IQueryAttribu
 
     [ObservableProperty]
     private bool isLoggedIn;
+
+    public bool ReduceMotion => AppSettings.ReduceMotion;
 
     public PlanetDetailViewModel(ICelestialBodyService celestialBodyService, IFavoritesService favoritesService, IAuthService authService)
     {
@@ -76,20 +80,7 @@ public sealed partial class PlanetDetailViewModel : ViewModelBase, IQueryAttribu
     }
 
     [RelayCommand]
-    private async Task EnterFlightModeAsync()
-    {
-        if (Planet is null)
-            return;
-
-        await Shell.Current.GoToAsync("flight-mode", new Dictionary<string, object>
-        {
-            ["name"] = Planet.Name,
-            ["accent"] = Planet.AccentColor.ToArgbHex()
-        });
-    }
-
-    [RelayCommand]
-    private void ToggleFavorite()
+    private async Task ToggleFavoriteAsync()
     {
         if (Planet == null || !_authService.IsLoggedIn)
             return;
@@ -99,8 +90,31 @@ public sealed partial class PlanetDetailViewModel : ViewModelBase, IQueryAttribu
         if (IsFavorite)
             _favoritesService.RemoveFavoritePlanet(username, Planet.Name);
         else
+        {
             _favoritesService.AddFavoritePlanet(username, Planet);
+            TriggerFavoriteHapticFeedback();
+        }
 
         IsFavorite = !IsFavorite;
+    }
+
+    private static void TriggerFavoriteHapticFeedback()
+    {
+        var platform = DeviceInfo.Current.Platform;
+        if (platform != DevicePlatform.Android && platform != DevicePlatform.iOS)
+        {
+            Debug.WriteLine("[PlanetDetailViewModel] Haptic feedback skipped (non-mobile platform).");
+            return;
+        }
+
+        try
+        {
+            HapticFeedback.Default.Perform(HapticFeedbackType.Click);
+            Debug.WriteLine("[PlanetDetailViewModel] Haptic feedback triggered.");
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[PlanetDetailViewModel] Haptic feedback failed: {ex.Message}");
+        }
     }
 }

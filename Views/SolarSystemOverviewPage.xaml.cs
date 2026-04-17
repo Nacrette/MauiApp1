@@ -17,6 +17,6 @@ public partial class SolarSystemOverviewPage : ContentPage
     protected override async void OnAppearing()
     {
         base.OnAppearing();
-        await _viewModel.LoadDataCommand.ExecuteAsync(null);
+        await _viewModel.EnsureInitialDataCommand.ExecuteAsync(null);
     }
 }

@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using System.Diagnostics;
 using Microsoft.Maui.Graphics;
 using MauiApp1.Models;
 
@@ -14,6 +15,8 @@ public class ExoplanetService : IExoplanetService
         _httpClient = httpClient;
     }
 
+    public void InvalidateCache() => _cache = null;
+
     public async Task<List<CelestialBody>> GetExoplanetsAsync()
     {
         if (_cache != null)
@@ -23,17 +26,39 @@ public class ExoplanetService : IExoplanetService
         
         try
         {
-            var url = "https://exoplanetarchive.ipac.caltech.edu/TAP/sync?query=select+pl_name,hostname,sy_dist,pl_bmasse,pl_rade,disc_year,pl_orbper,pl_orbsmax+from+ps&format=json&rows=150";
+            var query =
+                "select top 50 pl_name,hostname,sy_dist,pl_bmasse,pl_rade,disc_year,pl_orbper,pl_orbsmax " +
+                "from ps " +
+                "where default_flag=1 " +
+                "and pl_bmasse is not null " +
+                "and pl_rade is not null " +
+                "and sy_dist is not null " +
+                "order by sy_dist asc";
+
+            var encodedQuery = Uri.EscapeDataString(query);
+            var url = $"https://exoplanetarchive.ipac.caltech.edu/TAP/sync?query={encodedQuery}&format=json";
+            Debug.WriteLine($"[ExoplanetService] Querying exoplanets: {query}");
             var response = await _httpClient.GetAsync(url);
+            Debug.WriteLine($"[ExoplanetService] HTTP status: {(int)response.StatusCode}");
             
             if (response.IsSuccessStatusCode)
             {
                 var json = await response.Content.ReadAsStringAsync();
                 var planets = System.Text.Json.JsonSerializer.Deserialize<List<ExoplanetRecord>>(json, new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-                
-                if (planets != null && planets.Count > 0)
+                var validPlanets = planets?
+                    .Where(p =>
+                        !string.IsNullOrWhiteSpace(p.PlName) &&
+                        !string.IsNullOrWhiteSpace(p.Hostname) &&
+                        p.SyDist.HasValue &&
+                        p.PlBmasse.HasValue &&
+                        p.PlRade.HasValue)
+                    .ToList() ?? new List<ExoplanetRecord>();
+
+                Debug.WriteLine($"[ExoplanetService] Raw rows: {planets?.Count ?? 0}, valid rows: {validPlanets.Count}");
+
+                if (validPlanets.Count >= 15)
                 {
-                    _cache = planets.Select((p, index) => new CelestialBody
+                    _cache = validPlanets.Select((p, index) => new CelestialBody
                     {
                         Name = p.PlName ?? $"Exoplanet {index + 1}",
                         Type = CelestialBodyType.Exoplanet,
@@ -48,17 +73,26 @@ public class ExoplanetService : IExoplanetService
                         Emoji = "\U0001F31F",
                         Description = GenerateDescription(p)
                     }).ToList();
-                    
+
+                    Debug.WriteLine($"[ExoplanetService] Loaded {_cache.Count} exoplanets from API.");
                     return _cache;
                 }
+
+                Debug.WriteLine("[ExoplanetService] Not enough valid exoplanets (<15), using fallback.");
+            }
+            else
+            {
+                var body = await response.Content.ReadAsStringAsync();
+                Debug.WriteLine($"[ExoplanetService] API error body: {body}");
             }
         }
-        catch
+        catch (Exception ex)
         {
-            // Fall back to curated list
+            Debug.WriteLine($"[ExoplanetService] Exception: {ex.Message}");
         }
 
         _cache = fallbackExoplanets;
+        Debug.WriteLine($"[ExoplanetService] Loaded fallback exoplanets: {_cache.Count}");
         return _cache;
     }
 

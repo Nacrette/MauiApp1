@@ -1,16 +1,23 @@
-using System.Text.Json;
-using Microsoft.Maui.Storage;
+using System.Diagnostics;
 using MauiApp1.Models;
+using MauiApp1.Services.Database;
+using Microsoft.Maui.Storage;
 
 namespace MauiApp1.Services;
 
 public class AuthService : IAuthService
 {
+    private readonly AppDatabase _database;
     private User? _currentUser;
-    private const string UserKey = "current_user";
+    private bool _isMigrated;
 
     public User? CurrentUser => _currentUser;
     public bool IsLoggedIn => _currentUser != null;
+
+    public AuthService(AppDatabase database)
+    {
+        _database = database;
+    }
 
     public async Task<bool> LoginAsync(string username, string password)
     {
@@ -29,6 +36,7 @@ public class AuthService : IAuthService
         };
 
         await SaveUserAsync(_currentUser);
+        Debug.WriteLine($"[AuthService] User logged in: {_currentUser.Username}");
         return true;
     }
 
@@ -52,45 +60,70 @@ public class AuthService : IAuthService
         };
 
         await SaveUserAsync(_currentUser);
+        Debug.WriteLine($"[AuthService] User registered: {_currentUser.Username}");
         return true;
     }
 
-    public Task LogoutAsync()
+    public async Task LogoutAsync()
     {
+        if (_currentUser != null)
+            await _database.SetUserLoggedOutAsync(_currentUser.Username);
+
         _currentUser = null;
-        try
-        {
-            SecureStorage.Default.Remove(UserKey);
-        }
-        catch
-        {
-            // Ignore
-        }
-        return Task.CompletedTask;
+        Debug.WriteLine("[AuthService] User logged out.");
     }
 
     public async Task<User?> GetSavedUserAsync()
     {
+        await MigrateFromSecureStorageIfNeededAsync();
+
         try
         {
-            var json = await SecureStorage.Default.GetAsync(UserKey);
-            if (!string.IsNullOrEmpty(json))
-            {
-                _currentUser = JsonSerializer.Deserialize<User>(json);
-                return _currentUser;
-            }
+            _currentUser = await _database.GetLoggedInUserAsync();
+            Debug.WriteLine(_currentUser is null
+                ? "[AuthService] No saved logged-in user found."
+                : $"[AuthService] Loaded saved user: {_currentUser.Username}");
+            return _currentUser;
         }
-        catch
+        catch (Exception ex)
         {
-            try { SecureStorage.Default.Remove(UserKey); } catch { }
+            Debug.WriteLine($"[AuthService] Failed to load saved user: {ex}");
+            return null;
         }
-        return null;
     }
 
-    public Task SaveUserAsync(User user)
+    public async Task SaveUserAsync(User user)
     {
-        var json = JsonSerializer.Serialize(user);
-        return SecureStorage.Default.SetAsync(UserKey, json);
+        await _database.UpsertUserAsync(user);
+    }
+
+    private async Task MigrateFromSecureStorageIfNeededAsync()
+    {
+        if (_isMigrated)
+            return;
+
+        _isMigrated = true;
+
+        try
+        {
+            const string legacyUserKey = "current_user";
+            var json = await SecureStorage.Default.GetAsync(legacyUserKey);
+            if (string.IsNullOrWhiteSpace(json))
+                return;
+
+            var user = System.Text.Json.JsonSerializer.Deserialize<User>(json);
+            if (user is null)
+                return;
+
+            user.IsLoggedIn = true;
+            await _database.UpsertUserAsync(user);
+            SecureStorage.Default.Remove(legacyUserKey);
+            Debug.WriteLine("[AuthService] Migrated saved user from SecureStorage to SQLite.");
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[AuthService] SecureStorage migration skipped: {ex.Message}");
+        }
     }
 
     private static string GetRandomAvatarEmoji()

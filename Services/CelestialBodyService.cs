@@ -43,6 +43,13 @@ public class CelestialBodyService : ICelestialBodyService
         return _exoplanetCache;
     }
 
+    public async Task<IReadOnlyList<CelestialBody>> RefreshExoplanetsAsync()
+    {
+        _exoplanetService.InvalidateCache();
+        _exoplanetCache = null;
+        return await GetExoplanetsAsync();
+    }
+
     public async Task<IReadOnlyList<CelestialBody>> SearchCelestialBodiesAsync(string query)
     {
         if (string.IsNullOrWhiteSpace(query))

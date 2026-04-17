@@ -28,6 +28,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
     {
         CurrentUser = _authService.CurrentUser;
         IsLoggedIn = _authService.IsLoggedIn;
+        ReduceMotion = AppSettings.ReduceMotion;
     }
 
     [RelayCommand]
@@ -37,5 +38,10 @@ public sealed partial class SettingsViewModel : ViewModelBase
         CurrentUser = null;
         IsLoggedIn = false;
         await Shell.Current.GoToAsync("//login");
+    }
+
+    partial void OnReduceMotionChanged(bool value)
+    {
+        AppSettings.ReduceMotion = value;
     }
 }

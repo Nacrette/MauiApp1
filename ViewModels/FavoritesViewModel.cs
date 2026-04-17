@@ -29,7 +29,7 @@ public sealed partial class FavoritesViewModel : ViewModelBase
         _authService = authService;
     }
 
-    public void LoadFavorites()
+    public async Task LoadFavoritesAsync()
     {
         IsLoggedIn = _authService.IsLoggedIn;
         var username = _authService.CurrentUser?.Username ?? string.Empty;
@@ -43,6 +43,8 @@ public sealed partial class FavoritesViewModel : ViewModelBase
             HasApodFavorites = false;
             return;
         }
+
+        await _favoritesService.EnsureLoadedAsync();
 
         var planets = _favoritesService.GetFavoritePlanets(username);
         foreach (var planet in planets)
@@ -82,7 +84,7 @@ public sealed partial class FavoritesViewModel : ViewModelBase
     [RelayCommand]
     private Task ViewApodAsync(ApodFavorite? apod)
     {
-        if (apod is null)
+        if (apod is null || string.IsNullOrWhiteSpace(apod.Date))
             return Task.CompletedTask;
 
         return Shell.Current.GoToAsync("apod-detail", new Dictionary<string, object>

@@ -17,6 +17,7 @@ public sealed partial class SolarSystemOverviewViewModel : ViewModelBase
 
     private IReadOnlyList<CelestialBody> _allSolarSystem = Array.Empty<CelestialBody>();
     private IReadOnlyList<CelestialBody> _allExoplanets = Array.Empty<CelestialBody>();
+    private bool _initialDataLoaded;
 
     [ObservableProperty]
     private string? searchText;
@@ -39,9 +40,13 @@ public sealed partial class SolarSystemOverviewViewModel : ViewModelBase
         _authService = authService;
     }
 
+    /// <summary>First visit to Home only — avoids refetching when switching Shell tabs.</summary>
     [RelayCommand]
-    public async Task LoadDataAsync()
+    public async Task EnsureInitialDataAsync()
     {
+        if (_initialDataLoaded)
+            return;
+
         IsLoadingSolarSystem = true;
         try
         {
@@ -62,6 +67,29 @@ public sealed partial class SolarSystemOverviewViewModel : ViewModelBase
             Exoplanets.Clear();
             foreach (var planet in _allExoplanets)
                 Exoplanets.Add(planet);
+        }
+        finally
+        {
+            IsLoadingExoplanets = false;
+        }
+
+        _initialDataLoaded = true;
+    }
+
+    [RelayCommand]
+    public async Task RefreshExoplanetsAsync()
+    {
+        if (IsLoadingExoplanets)
+            return;
+
+        IsLoadingExoplanets = true;
+        try
+        {
+            _allExoplanets = await _celestialBodyService.RefreshExoplanetsAsync();
+            Exoplanets.Clear();
+            foreach (var planet in _allExoplanets)
+                Exoplanets.Add(planet);
+            ApplySearch();
         }
         finally
         {
@@ -98,9 +126,6 @@ public sealed partial class SolarSystemOverviewViewModel : ViewModelBase
         foreach (var result in results)
             SearchResults.Add(result);
     }
-
-    [RelayCommand]
-    private Task OpenApodAsync() => Shell.Current.GoToAsync("apod");
 
     [RelayCommand]
     private Task SelectCelestialBodyAsync(CelestialBody? body)

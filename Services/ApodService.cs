@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using System.Diagnostics;
 using MauiApp1.Models;
 
 namespace MauiApp1.Services;
@@ -21,25 +22,28 @@ public sealed class ApodService : IApodService
         if (_todaysCache != null && _todaysCacheDate == today)
             return _todaysCache;
 
-        var url = $"https://api.nasa.gov/planetary/apod?api_key=DEMO_KEY&date={today:yyyy-MM-dd}";
-        
         try
         {
-            using var response = await _httpClient.GetAsync(url, cancellationToken);
-            response.EnsureSuccessStatusCode();
-            
-            var model = await response.Content.ReadFromJsonAsync<ApodModel>(cancellationToken: cancellationToken);
-            
-            if (model != null)
+            // Try today first; if unavailable, walk backwards to find a real APOD.
+            for (var candidate = today; candidate >= new DateOnly(1995, 6, 16); candidate = candidate.AddDays(-1))
             {
-                _todaysCache = model;
-                _todaysCacheDate = today;
-                return model;
+                var model = await TryFetchApodByDateAsync(candidate, cancellationToken);
+                if (model is not null)
+                {
+                    _todaysCache = model;
+                    _todaysCacheDate = today;
+                    Debug.WriteLine($"[ApodService] APOD resolved using date: {candidate:yyyy-MM-dd}");
+                    return model;
+                }
+
+                // Avoid scanning too far for long outages.
+                if ((today.DayNumber - candidate.DayNumber) >= 10)
+                    break;
             }
         }
-        catch
+        catch (Exception ex)
         {
-            // Return fallback if API fails
+            Debug.WriteLine($"[ApodService] Failed to load today's APOD, fallback used. Error: {ex.Message}");
         }
 
         return new ApodModel
@@ -56,27 +60,45 @@ public sealed class ApodService : IApodService
 
     public async Task<ApodModel> GetApodByDateAsync(DateOnly date, CancellationToken cancellationToken = default)
     {
+        var model = await TryFetchApodByDateAsync(date, cancellationToken);
+        if (model is not null)
+            return model;
+
+        Debug.WriteLine($"[ApodService] Failed to load APOD by date {date:yyyy-MM-dd}, fallback model used.");
+        return new ApodModel
+        {
+            Title = "Image Unavailable",
+            Date = date.ToString("yyyy-MM-dd"),
+            Explanation = "The astronomical picture for this date is not available.",
+            Url = "",
+            HdUrl = "",
+            MediaType = "image"
+        };
+    }
+
+    private async Task<ApodModel?> TryFetchApodByDateAsync(DateOnly date, CancellationToken cancellationToken)
+    {
         var url = $"https://api.nasa.gov/planetary/apod?api_key=DEMO_KEY&date={date:yyyy-MM-dd}";
-        
+
         try
         {
-            using var response = await _httpClient.GetAsync(url, cancellationToken);
-            response.EnsureSuccessStatusCode();
-            
-            var model = await response.Content.ReadFromJsonAsync<ApodModel>(cancellationToken: cancellationToken);
-            return model ?? new ApodModel { Title = "Unknown", Date = date.ToString("yyyy-MM-dd") };
-        }
-        catch
-        {
-            return new ApodModel
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            cts.CancelAfter(TimeSpan.FromSeconds(15));
+            Debug.WriteLine($"[ApodService] Fetching APOD by date: {date:yyyy-MM-dd}");
+            using var response = await _httpClient.GetAsync(url, cts.Token);
+            if (!response.IsSuccessStatusCode)
             {
-                Title = "Image Unavailable",
-                Date = date.ToString("yyyy-MM-dd"),
-                Explanation = "The astronomical picture for this date is not available.",
-                Url = "",
-                HdUrl = "",
-                MediaType = "image"
-            };
+                Debug.WriteLine($"[ApodService] APOD request failed for {date:yyyy-MM-dd}, status={(int)response.StatusCode}");
+                return null;
+            }
+
+            var model = await response.Content.ReadFromJsonAsync<ApodModel>(cancellationToken: cts.Token);
+            return model;
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[ApodService] APOD exception for {date:yyyy-MM-dd}: {ex.Message}");
+            return null;
         }
     }
 }

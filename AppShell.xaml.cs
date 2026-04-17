@@ -9,7 +9,7 @@ public partial class AppShell : Shell
         InitializeComponent();
 
         Routing.RegisterRoute("planet-detail", typeof(PlanetDetailPage));
-        Routing.RegisterRoute("flight-mode", typeof(FlightModePage));
+        Routing.RegisterRoute("apod-detail", typeof(ApodPage));
         Routing.RegisterRoute("login", typeof(LoginPage));
     }
 }

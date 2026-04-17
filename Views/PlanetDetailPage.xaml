@@ -11,6 +11,7 @@
     <ContentPage.Resources>
         <ResourceDictionary>
             <converters:FavoriteButtonTextConverter x:Key="FavoriteButtonTextConverter" />
+            <converters:InverseBoolConverter x:Key="InverseBoolConverter" />
         </ResourceDictionary>
     </ContentPage.Resources>
 
@@ -48,7 +49,8 @@
             </Grid>
 
             <Grid Grid.Row="1" HorizontalOptions="Center">
-                <controls:RotatingPlanetView AccentColor="{Binding Planet.AccentColor}" />
+                <controls:RotatingPlanetView AccentColor="{Binding Planet.AccentColor}" 
+                                          MotionEnabled="{Binding ReduceMotion, Converter={StaticResource InverseBoolConverter}}" />
             </Grid>
 
             <CollectionView Grid.Row="2" ItemsSource="{Binding FactCards}">
@@ -71,24 +73,12 @@
                 </CollectionView.ItemTemplate>
             </CollectionView>
 
-            <Grid Grid.Row="3" ColumnSpacing="12">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
-
-                <Button
-                    Text="Enter Flight Mode"
-                    Style="{StaticResource GlowingButton}"
-                    Command="{Binding EnterFlightModeCommand}" />
-
-                <Button
-                    Grid.Column="1"
-                    Text="{Binding IsFavorite, Converter={StaticResource FavoriteButtonTextConverter}}"
-                    Style="{StaticResource GlowingButton}"
-                    Command="{Binding ToggleFavoriteCommand}" />
-            </Grid>
+            <Button
+                Grid.Row="3"
+                Text="{Binding IsFavorite, Converter={StaticResource FavoriteButtonTextConverter}}"
+                Style="{StaticResource GlowingButton}"
+                Command="{Binding ToggleFavoriteCommand}"
+                HorizontalOptions="Fill" />
         </Grid>
     </Grid>
 </ContentPage>
-

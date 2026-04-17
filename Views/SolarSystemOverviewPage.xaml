@@ -28,9 +28,6 @@
                     Placeholder="Search planets, exoplanets, stars…"
                     Text="{Binding SearchText}"
                     CancelButtonColor="{StaticResource TextSecondary}" />
-                <Button Text="Today's NASA APOD" Style="{StaticResource GlowingButton}" 
-                        Command="{Binding OpenApodCommand}"
-                        HorizontalOptions="Start" />
             </VerticalStackLayout>
 
             <ActivityIndicator Grid.Row="2" IsRunning="True" 
@@ -69,7 +66,15 @@
                     </VerticalStackLayout>
 
                     <VerticalStackLayout Spacing="8">
-                        <Label Text="Exoplanets" Style="{StaticResource CosmicSubtitle}" FontSize="16" />
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12" VerticalOptions="Center">
+                            <Label Grid.Column="0" Text="Exoplanets" Style="{StaticResource CosmicSubtitle}" FontSize="16" VerticalOptions="Center" />
+                            <Button Grid.Column="1"
+                                    Text="Refresh"
+                                    Style="{StaticResource GlowingButton}"
+                                    Padding="14,8"
+                                    Command="{Binding RefreshExoplanetsCommand}"
+                                    IsEnabled="{Binding IsLoadingExoplanets, Converter={StaticResource InverseBoolConverter}}" />
+                        </Grid>
                         <ActivityIndicator IsRunning="{Binding IsLoadingExoplanets}" IsVisible="{Binding IsLoadingExoplanets}" HorizontalOptions="Center" />
                         <CollectionView ItemsSource="{Binding Exoplanets}" HeightRequest="400" IsVisible="{Binding IsLoadingExoplanets, Converter={StaticResource InverseBoolConverter}}">
                             <CollectionView.ItemsLayout>

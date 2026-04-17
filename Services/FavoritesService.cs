@@ -1,26 +1,34 @@
-using System.Text.Json;
+using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using Microsoft.Maui.Storage;
 using MauiApp1.Models;
+using MauiApp1.Services.Database;
 
 namespace MauiApp1.Services;
 
 public class FavoritesService : IFavoritesService
 {
     private readonly ILogger<FavoritesService> _logger;
+    private readonly AppDatabase _database;
     private readonly Dictionary<string, List<CelestialBody>> _planetFavorites = new();
     private readonly Dictionary<string, List<ApodFavorite>> _apodFavorites = new();
-    private const string PlanetsKey = "favorite_planets";
-    private const string ApodsKey = "favorite_apods";
     private bool _isLoaded;
+    private readonly SemaphoreSlim _loadLock = new(1, 1);
+    private bool _isMigrated;
 
-    public FavoritesService(ILogger<FavoritesService> logger)
+    public FavoritesService(ILogger<FavoritesService> logger, AppDatabase database)
     {
         _logger = logger;
+        _database = database;
     }
+
+    public Task EnsureLoadedAsync() => LoadFromStorageAsync();
 
     public IReadOnlyList<CelestialBody> GetFavoritePlanets(string username)
     {
+        username = NormalizeUsername(username);
+        EnsureLoaded();
+        EnsureUserLoaded(username);
         return _planetFavorites.TryGetValue(username, out var favorites) 
             ? favorites.AsReadOnly() 
             : new List<CelestialBody>().AsReadOnly();
@@ -28,6 +36,9 @@ public class FavoritesService : IFavoritesService
 
     public IReadOnlyList<ApodFavorite> GetFavoriteApods(string username)
     {
+        username = NormalizeUsername(username);
+        EnsureLoaded();
+        EnsureUserLoaded(username);
         return _apodFavorites.TryGetValue(username, out var favorites) 
             ? favorites.AsReadOnly() 
             : new List<ApodFavorite>().AsReadOnly();
@@ -35,12 +46,17 @@ public class FavoritesService : IFavoritesService
 
     public async Task<IReadOnlyList<CelestialBody>> GetFavoritePlanetsAsync(string username)
     {
-        await EnsureLoadedAsync();
+        username = NormalizeUsername(username);
+        await LoadFromStorageAsync();
+        await EnsureUserLoadedAsync(username).ConfigureAwait(false);
         return GetFavoritePlanets(username);
     }
 
     public void AddFavoritePlanet(string username, CelestialBody planet)
     {
+        username = NormalizeUsername(username);
+        EnsureLoaded();
+        EnsureUserLoaded(username);
         EnsureUserExists(username);
         
         if (!_planetFavorites[username].Any(p => p.Name == planet.Name))
@@ -52,6 +68,9 @@ public class FavoritesService : IFavoritesService
 
     public void RemoveFavoritePlanet(string username, string planetName)
     {
+        username = NormalizeUsername(username);
+        EnsureLoaded();
+        EnsureUserLoaded(username);
         if (_planetFavorites.TryGetValue(username, out var favorites))
         {
             favorites.RemoveAll(p => p.Name == planetName);
@@ -61,12 +80,18 @@ public class FavoritesService : IFavoritesService
 
     public bool IsPlanetFavorite(string username, string planetName)
     {
+        username = NormalizeUsername(username);
+        EnsureLoaded();
+        EnsureUserLoaded(username);
         return _planetFavorites.TryGetValue(username, out var favorites) 
             && favorites.Any(p => p.Name == planetName);
     }
 
     public void AddFavoriteApod(string username, ApodFavorite apod)
     {
+        username = NormalizeUsername(username);
+        EnsureLoaded();
+        EnsureUserLoaded(username);
         EnsureUserExists(username);
         
         if (!_apodFavorites[username].Any(a => a.Date == apod.Date))
@@ -78,6 +103,9 @@ public class FavoritesService : IFavoritesService
 
     public void RemoveFavoriteApod(string username, string apodDate)
     {
+        username = NormalizeUsername(username);
+        EnsureLoaded();
+        EnsureUserLoaded(username);
         if (_apodFavorites.TryGetValue(username, out var favorites))
         {
             favorites.RemoveAll(a => a.Date == apodDate);
@@ -87,6 +115,9 @@ public class FavoritesService : IFavoritesService
 
     public bool IsApodFavorite(string username, string apodDate)
     {
+        username = NormalizeUsername(username);
+        EnsureLoaded();
+        EnsureUserLoaded(username);
         return _apodFavorites.TryGetValue(username, out var favorites) 
             && favorites.Any(a => a.Date == apodDate);
     }
@@ -95,11 +126,19 @@ public class FavoritesService : IFavoritesService
     {
         try
         {
-            var planetsJson = JsonSerializer.Serialize(_planetFavorites);
-            await SecureStorage.Default.SetAsync(PlanetsKey, planetsJson);
+            foreach (var (username, planets) in _planetFavorites)
+            {
+                foreach (var planet in planets)
+                    await _database.AddOrUpdatePlanetFavoriteAsync(username, planet).ConfigureAwait(false);
+            }
 
-            var apodsJson = JsonSerializer.Serialize(_apodFavorites);
-            await SecureStorage.Default.SetAsync(ApodsKey, apodsJson);
+            foreach (var (username, apods) in _apodFavorites)
+            {
+                foreach (var apod in apods)
+                    await _database.AddOrUpdateApodFavoriteAsync(username, apod).ConfigureAwait(false);
+            }
+
+            Debug.WriteLine("[FavoritesService] SaveAllAsync completed.");
         }
         catch (Exception ex)
         {
@@ -107,51 +146,130 @@ public class FavoritesService : IFavoritesService
         }
     }
 
-    private async Task EnsureLoadedAsync()
+    private async Task LoadFromStorageAsync()
     {
-        if (_isLoaded) return;
-        
+        if (_isLoaded)
+            return;
+
+        await _loadLock.WaitAsync().ConfigureAwait(false);
         try
         {
-            var planetsJson = await SecureStorage.Default.GetAsync(PlanetsKey);
-            if (!string.IsNullOrEmpty(planetsJson))
+            if (_isLoaded)
+                return;
+
+            await _database.InitializeAsync().ConfigureAwait(false);
+            await MigrateFromSecureStorageIfNeededAsync().ConfigureAwait(false);
+
+            _planetFavorites.Clear();
+            _apodFavorites.Clear();
+
+            var userNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var savedUser = await _database.GetLoggedInUserAsync().ConfigureAwait(false);
+            if (!string.IsNullOrWhiteSpace(savedUser?.Username))
+                userNames.Add(savedUser.Username);
+
+            foreach (var username in userNames)
             {
-                var planets = JsonSerializer.Deserialize<Dictionary<string, List<CelestialBody>>>(planetsJson);
-                if (planets != null)
-                {
-                    foreach (var kvp in planets)
-                    {
-                        _planetFavorites[kvp.Key] = kvp.Value;
-                    }
-                }
+                _planetFavorites[username] = (await _database.GetPlanetFavoritesAsync(username).ConfigureAwait(false)).ToList();
+                _apodFavorites[username] = (await _database.GetApodFavoritesAsync(username).ConfigureAwait(false)).ToList();
             }
 
-            var apodsJson = await SecureStorage.Default.GetAsync(ApodsKey);
-            if (!string.IsNullOrEmpty(apodsJson))
-            {
-                var apods = JsonSerializer.Deserialize<Dictionary<string, List<ApodFavorite>>>(apodsJson);
-                if (apods != null)
-                {
-                    foreach (var kvp in apods)
-                    {
-                        _apodFavorites[kvp.Key] = kvp.Value;
-                    }
-                }
-            }
+            _isLoaded = true;
+            Debug.WriteLine("[FavoritesService] Favorites loaded from SQLite.");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to load favorites from storage");
+            _logger.LogError(ex, "Failed to load favorites from SQLite");
         }
-
-        _isLoaded = true;
+        finally
+        {
+            _loadLock.Release();
+        }
     }
 
     private void EnsureUserExists(string username)
     {
         if (!_planetFavorites.ContainsKey(username))
-            _planetFavorites[username] = new List<CelestialBody>();
+            _planetFavorites[username] = [];
         if (!_apodFavorites.ContainsKey(username))
-            _apodFavorites[username] = new List<ApodFavorite>();
+            _apodFavorites[username] = [];
+    }
+
+    private void EnsureLoaded()
+    {
+        if (_isLoaded) return;
+        // Must not capture UI sync context — blocking .GetResult() on the main thread would deadlock.
+        LoadFromStorageAsync().ConfigureAwait(false).GetAwaiter().GetResult();
+    }
+
+    private void EnsureUserLoaded(string username)
+    {
+        if (_planetFavorites.ContainsKey(username) && _apodFavorites.ContainsKey(username))
+            return;
+
+        EnsureUserLoadedAsync(username).ConfigureAwait(false).GetAwaiter().GetResult();
+    }
+
+    private async Task EnsureUserLoadedAsync(string username)
+    {
+        if (_planetFavorites.ContainsKey(username) && _apodFavorites.ContainsKey(username))
+            return;
+
+        _planetFavorites[username] = (await _database.GetPlanetFavoritesAsync(username).ConfigureAwait(false)).ToList();
+        _apodFavorites[username] = (await _database.GetApodFavoritesAsync(username).ConfigureAwait(false)).ToList();
+    }
+
+    private static string NormalizeUsername(string username) => username.Trim().ToLowerInvariant();
+
+    private async Task MigrateFromSecureStorageIfNeededAsync()
+    {
+        if (_isMigrated)
+            return;
+
+        _isMigrated = true;
+
+        const string legacyPlanetsKey = "favorite_planets";
+        const string legacyApodsKey = "favorite_apods";
+
+        try
+        {
+            var planetsJson = await SecureStorage.Default.GetAsync(legacyPlanetsKey).ConfigureAwait(false);
+            if (!string.IsNullOrWhiteSpace(planetsJson))
+            {
+                var legacyPlanets =
+                    System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, List<CelestialBody>>>(planetsJson);
+                if (legacyPlanets != null)
+                {
+                    foreach (var (username, planets) in legacyPlanets)
+                    {
+                        foreach (var planet in planets)
+                            await _database.AddOrUpdatePlanetFavoriteAsync(username, planet).ConfigureAwait(false);
+                    }
+                }
+            }
+
+            var apodsJson = await SecureStorage.Default.GetAsync(legacyApodsKey).ConfigureAwait(false);
+            if (!string.IsNullOrWhiteSpace(apodsJson))
+            {
+                var legacyApods =
+                    System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, List<ApodFavorite>>>(apodsJson);
+                if (legacyApods != null)
+                {
+                    foreach (var (username, apods) in legacyApods)
+                    {
+                        foreach (var apod in apods)
+                            await _database.AddOrUpdateApodFavoriteAsync(username, apod).ConfigureAwait(false);
+                    }
+                }
+            }
+
+            SecureStorage.Default.Remove(legacyPlanetsKey);
+            SecureStorage.Default.Remove(legacyApodsKey);
+            Debug.WriteLine("[FavoritesService] Legacy favorites migration completed.");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Legacy favorites migration skipped.");
+        }
     }
 }

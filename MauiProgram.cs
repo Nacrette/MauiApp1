@@ -1,8 +1,10 @@
 using Microsoft.Extensions.Logging;
 using CommunityToolkit.Maui;
 using MauiApp1.Services;
+using MauiApp1.Services.Database;
 using MauiApp1.ViewModels;
 using MauiApp1.Views;
+using Plugin.LocalNotification;
 
 namespace MauiApp1;
 
@@ -14,17 +16,20 @@ public static class MauiProgram
         builder
             .UseMauiApp<App>()
             .UseMauiCommunityToolkit()
+            .UseLocalNotification()
             .ConfigureFonts(fonts =>
             {
                 fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
                 fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
             });
 
+        builder.Services.AddSingleton<AppDatabase>();
         builder.Services.AddSingleton<IAuthService, AuthService>();
         builder.Services.AddSingleton<IFavoritesService, FavoritesService>();
         builder.Services.AddHttpClient<IExoplanetService, ExoplanetService>();
         builder.Services.AddSingleton<ICelestialBodyService, CelestialBodyService>();
         builder.Services.AddHttpClient<IApodService, ApodService>();
+        builder.Services.AddSingleton<IApodNotificationService, ApodNotificationService>();
 
         builder.Services.AddTransient<LoginViewModel>();
         builder.Services.AddSingleton<SolarSystemOverviewViewModel>();

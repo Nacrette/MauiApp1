@@ -30,6 +30,10 @@
                            HorizontalOptions="Center" IsVisible="{Binding ErrorMessage, Converter={StaticResource StringNotNullOrEmptyConverter}}" />
                     
                     <StackLayout IsVisible="{Binding IsLoading, Converter={StaticResource InverseBoolConverter}}" Spacing="16">
+                        <Button Text="Explore Random APOD"
+                                Style="{StaticResource GlowingButton}"
+                                Command="{Binding LoadRandomApodCommand}"
+                                HorizontalOptions="Start" />
                         
                         <Frame BackgroundColor="{StaticResource CosmicSurface}" 
                                CornerRadius="16" Padding="0" HasShadow="False">

@@ -6,6 +6,7 @@ public interface ICelestialBodyService
 {
     Task<IReadOnlyList<CelestialBody>> GetSolarSystemPlanetsAsync();
     Task<IReadOnlyList<CelestialBody>> GetExoplanetsAsync();
+    Task<IReadOnlyList<CelestialBody>> RefreshExoplanetsAsync();
     Task<IReadOnlyList<CelestialBody>> SearchCelestialBodiesAsync(string query);
     Task<CelestialBody?> GetCelestialBodyByNameAsync(string name);
 }

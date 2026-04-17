@@ -11,9 +11,14 @@ public partial class PlanetDetailPage : ContentPage
         BindingContext = AppServices.GetRequiredService<PlanetDetailViewModel>();
     }
 
+    protected override void OnAppearing()
+    {
+        base.OnAppearing();
+        OnPropertyChanged(nameof(BindingContext));
+    }
+
     private async void OnBackClicked(object? sender, EventArgs e)
     {
         await Shell.Current.GoToAsync("..");
     }
 }
-

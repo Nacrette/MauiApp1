@@ -5,4 +5,5 @@ namespace MauiApp1.Services;
 public interface IExoplanetService
 {
     Task<List<CelestialBody>> GetExoplanetsAsync();
+    void InvalidateCache();
 }

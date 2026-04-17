@@ -2,12 +2,15 @@ using Microsoft.Maui.Graphics;
 
 namespace MauiApp1.Controls;
 
-// Large rotating planet used on the detail page (timer-driven, no external images required).
 public sealed class RotatingPlanetView : GraphicsView
 {
     public static readonly BindableProperty AccentColorProperty =
         BindableProperty.Create(nameof(AccentColor), typeof(Color), typeof(RotatingPlanetView), Colors.Cyan,
             propertyChanged: (b, _, _) => ((RotatingPlanetView)b)._drawable.SetAccent(((RotatingPlanetView)b).AccentColor));
+
+    public static readonly BindableProperty MotionEnabledProperty =
+        BindableProperty.Create(nameof(MotionEnabled), typeof(bool), typeof(RotatingPlanetView), true,
+            propertyChanged: OnMotionEnabledChanged);
 
     private readonly PlanetDrawable _drawable;
     private IDispatcherTimer? _timer;
@@ -18,6 +21,12 @@ public sealed class RotatingPlanetView : GraphicsView
         set => SetValue(AccentColorProperty, value);
     }
 
+    public bool MotionEnabled
+    {
+        get => (bool)GetValue(MotionEnabledProperty);
+        set => SetValue(MotionEnabledProperty, value);
+    }
+
     public RotatingPlanetView()
     {
         _drawable = new PlanetDrawable(Colors.Cyan);
@@ -26,23 +35,44 @@ public sealed class RotatingPlanetView : GraphicsView
         WidthRequest = 260;
         InputTransparent = true;
 
-        Loaded += (_, _) => Start();
+        Loaded += (_, _) =>
+        {
+            if (MotionEnabled) Start();
+        };
         Unloaded += (_, _) => Stop();
+    }
+
+    private static void OnMotionEnabledChanged(BindableObject bindable, object oldValue, object newValue)
+    {
+        var view = (RotatingPlanetView)bindable;
+        if (newValue is bool enabled)
+        {
+            if (enabled)
+                view.Start();
+            else
+                view.Stop();
+        }
     }
 
     private void Start()
     {
-        _timer ??= Dispatcher.CreateTimer();
-        _timer.Interval = TimeSpan.FromMilliseconds(33);
-        _timer.Tick -= OnTick;
-        _timer.Tick += OnTick;
+        if (_timer == null)
+        {
+            _timer = Dispatcher.CreateTimer();
+            _timer.Interval = TimeSpan.FromMilliseconds(33);
+            _timer.Tick += OnTick;
+        }
         _timer.Start();
     }
 
-    private void Stop() => _timer?.Stop();
+    private void Stop()
+    {
+        _timer?.Stop();
+    }
 
     private void OnTick(object? sender, EventArgs e)
     {
+        if (!MotionEnabled) return;
         _drawable.Step();
         Invalidate();
     }
@@ -65,13 +95,11 @@ public sealed class RotatingPlanetView : GraphicsView
             canvas.SaveState();
             canvas.BlendMode = BlendMode.Screen;
 
-            // Glow
             canvas.FillColor = _accent.WithAlpha(0.18f);
             canvas.FillCircle(cx, cy, r * 2.15f);
 
             canvas.RestoreState();
 
-            // Planet sphere
             var sphere = new RadialGradientPaint
             {
                 Center = new Point(cx - r * 0.45f, cy - r * 0.45f),
@@ -86,7 +114,6 @@ public sealed class RotatingPlanetView : GraphicsView
             canvas.SetFillPaint(sphere, dirtyRect);
             canvas.FillCircle(cx, cy, r);
 
-            // Rotate some bands for "motion"
             canvas.SaveState();
             var clip = new PathF();
             clip.AppendCircle(cx, cy, r);
@@ -104,11 +131,9 @@ public sealed class RotatingPlanetView : GraphicsView
 
             canvas.RestoreState();
 
-            // Rim light
             canvas.StrokeColor = Colors.White.WithAlpha(0.15f);
             canvas.StrokeSize = MathF.Max(1.5f, r * 0.06f);
             canvas.DrawCircle(cx, cy, r);
         }
     }
 }
-

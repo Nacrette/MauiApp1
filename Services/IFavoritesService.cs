@@ -4,6 +4,9 @@ namespace MauiApp1.Services;
 
 public interface IFavoritesService
 {
+    /// <summary>Loads persisted favorites from storage. Call from async code before sync reads to avoid UI deadlocks.</summary>
+    Task EnsureLoadedAsync();
+
     IReadOnlyList<CelestialBody> GetFavoritePlanets(string username);
     IReadOnlyList<ApodFavorite> GetFavoriteApods(string username);
     Task<IReadOnlyList<CelestialBody>> GetFavoritePlanetsAsync(string username);
